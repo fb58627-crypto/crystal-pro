@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><title>Test</title><iframe id="app" src="./index.html"></iframe><pre id="out"></pre><script>
+const out=document.getElementById('out'), frame=document.getElementById('app'); let seeded=false;
+frame.addEventListener('load',()=>{try{
+ const w=frame.contentWindow,d=frame.contentDocument;
+ if(!seeded){seeded=true;w.localStorage.setItem('crystalProHub_v2',JSON.stringify({clients:[{id:'c1',name:'Cafe'}],jobs:[],money:[],visits:[{id:'v1',clientId:'c1',service:'Front',date:new Date().toISOString().slice(0,10),repeatType:'interval',intervalDays:15,active:true},{id:'v2',clientId:'c1',service:'Full',date:'2099-01-01',repeatType:'monthly',active:true}],employees:[]}));frame.contentWindow.location.reload();return;}
+ w.confirm=()=>true;
+ // create job without description
+ w.openForm('job');let f=d.getElementById('modalForm');f.querySelector('[name=clientId]').value='c1';f.querySelector('[name=date]').value=new Date().toISOString().slice(0,10);f.querySelector('[name=price]').value='100';f.requestSubmit();
+ let job=w.db.jobs[0]; if(!job||job.name!=='')throw Error('Optional description save failed');
+ let pay=d.querySelector('#jobList [data-a=pay]');if(!pay)throw Error('Mark paid button missing');pay.click();if(w.db.money.filter(x=>x.linkedJobId===job.id).reduce((a,x)=>a+x.amount,0)!==100)throw Error('Mark paid did not record full payment');
+ // mark done from cloned occurrence
+ w.go('schedule');let done=d.querySelector('#dueVisits [data-a=done]');if(!done)throw Error('Mark done button missing');done.click();if(!w.db.visits[0].lastCompletedDate)throw Error('Mark done did not persist');
+ // pause from cloned upcoming occurrence
+ let pause=d.querySelector('#upcomingVisits [data-a=pause]');if(!pause)throw Error('Pause button missing');pause.click();if(w.db.visits[1].active!==false)throw Error('Pause did not persist');
+ out.textContent='PASS: optional job description, mark paid, mark done, pause reminder.';
+ }catch(e){out.textContent='FAIL: '+e.stack;}});
+</script>
